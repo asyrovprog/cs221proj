@@ -3,6 +3,9 @@ import collections, csv, os
 from datetime import datetime, timedelta, date
 import pandas as pd
 
+SET_TYPES = ["train", "dev", "test"]
+SET_TYPE_SIZES = [0.5, 0.25, 0.25] # proportions of each set
+
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
         yield start_date + timedelta(days=n)
@@ -32,9 +35,15 @@ def preprocess(filename, tofile, fld_date, start_date, end_date, days = True):
             dict_days[date] += 1
 
     counts = []
+
     for d in date_func(start_date, end_date):
         counts.append(dict_days[d])
 
-    raw_data = {'count': counts}
-    df = pd.DataFrame(raw_data, columns= ["count"])
-    df.to_csv(tofile)
+    start = 0
+    for i in range(0, len(SET_TYPES)):
+        end = int(len(counts) * SET_TYPE_SIZES)
+        raw_data = {'count': counts[start:end]}
+        start = end
+        df = pd.DataFrame(raw_data, columns=["count"])
+        df.to_csv(tofile + "-" + SET_TYPES[i] + ".csv")
+
