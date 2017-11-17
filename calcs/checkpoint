@@ -1,2 +1,2 @@
-model_checkpoint_path: "san-francisco-fire-rnn-smoke"
-all_model_checkpoint_paths: "san-francisco-fire-rnn-smoke"
+model_checkpoint_path: "sf-fire-rnn-smoke"
+all_model_checkpoint_paths: "sf-fire-rnn-smoke"

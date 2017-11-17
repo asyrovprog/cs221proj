@@ -8,21 +8,17 @@ datasets = [
     # This incidents Response Seattle-Police (some missing data in 2013-2014)
     ["https://data.seattle.gov/api/views/3k2p-39jp/rows.csv?accessType=DOWNLOAD",
      False,
-     "./data_raw/seattle-911.csv"],
+     "./data_raw/sea911.csv"],
     # Individual household electric power consumption Data Set
     # 2075259 measurements gathered between December 2006 and November 2010 (47 months).
-    ["https://archive.ics.uci.edu/ml/machine-learning-databases/00235/household_power_consumption.zip",
-     True,
-     "./data/", "./data_raw/household_power_consumption.zip"],
-    # This dataset reflects incidents of crime in the City of Los Angeles dating back to 2010.
-    ["https://data.lacity.org/api/views/y8tr-7khq/rows.csv?accessType=DOWNLOAD",
-     False,
-     "./data_raw/los-angeles-911.csv"],
+    # ["https://archive.ics.uci.edu/ml/machine-learning-databases/00235/household_power_consumption.zip",
+    #  True,
+    # "./data/", "./data_raw/household_power_consumption.zip"],
     # The City of San Francisco Fire Department Calls for Service
     # https://catalog.data.gov/dataset/fire-department-calls-for-service
     ["https://data.sfgov.org/api/views/nuek-vuh3/rows.csv?accessType=DOWNLOAD",
      False,
-    "./data_raw/san-francisco-fire.csv"]]
+    "./data_raw/sf-fire.csv"]]
 
 
 def download_unzip(download_info):
@@ -41,6 +37,8 @@ def download_unzip(download_info):
 
 if __name__ == "__main__":
     for di in datasets:
+        if not os.path.isdir("./data_raw"):
+            os.mkdir("./data_raw")
         print("downloading " + di[0] + "...")
         download_unzip(di)
         print("downloaded to: " + di[2])
