@@ -2,6 +2,7 @@ import numpy as np
 import collections, csv, os
 from datetime import datetime, timedelta, date
 import pandas as pd
+from scipy.ndimage.filters import gaussian_filter
 
 SET_TYPES = ["train", "dev", "test"]
 SET_TYPE_SIZES = [0.5, 0.25, 0.25] # proportions of each set
@@ -15,7 +16,7 @@ def hoursrange(start_date, end_date):
         for h in range(0, 24):
             yield start_date + timedelta(days=n, hours=h)
 
-def preprocess(filename, tofile, fld_date, start_date, end_date, days = True):
+def preprocess(filename, tofile, fld_date, start_date, end_date, days = True, use_filter = False):
     FLD_DATE = fld_date
     date_func = daterange if days else hoursrange
     dict_days = collections.defaultdict(int)
@@ -35,9 +36,11 @@ def preprocess(filename, tofile, fld_date, start_date, end_date, days = True):
             dict_days[date] += 1
 
     counts = []
-
     for d in date_func(start_date, end_date):
         counts.append(dict_days[d])
+
+    if use_filter:
+        counts = gaussian_filter(counts, sigma=2)
 
     start = 0
     for i in range(0, len(SET_TYPES)):
@@ -46,4 +49,3 @@ def preprocess(filename, tofile, fld_date, start_date, end_date, days = True):
         start = end
         df = pd.DataFrame(raw_data, columns=["count"])
         df.to_csv(tofile + "-" + SET_TYPES[i] + ".csv")
-

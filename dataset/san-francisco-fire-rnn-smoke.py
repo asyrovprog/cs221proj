@@ -8,15 +8,15 @@ from scipy.ndimage.filters import gaussian_filter
 import random
 n_steps = 24 * 7
 n_inputs = 1
-n_neurons = 100
+n_neurons = 48
 n_outputs = 1
 learning_rate = 0.0001
-n_iterations = 2000
+n_iterations = 1500
 batch_size = 50
 n_layers = 3
 
-ARTIFACTS = "../calcs/la-fire-rnn-smoke"
-DATASET = "../ds/los-angeles-fire-counts-2001-2017-hours.csv"
+ARTIFACTS = "../calcs/san-francisco-fire-rnn-smoke"
+DATASET = "../ds/san-francisco-fire-counts-2001-2017-hours.csv"
 
 with open(DATASET, "rt") as f:
     reader = csv.DictReader(f)
@@ -37,7 +37,7 @@ def next_batch(n_batch, n_steps):
     count = len(data)
     ys = []
     for b in range(0, batch_size):
-        i = random.randint(0, count - n_steps * 2)
+        i = random.randint(0, count - n_steps * 2 - 1)
         run = []
         for s in range(0, n_steps * 2 + 1):
             run.append(data[i])
@@ -51,11 +51,12 @@ reset_graph()
 X = tf.placeholder(tf.float32, [None, n_steps, n_inputs])
 y = tf.placeholder(tf.float32, [None, n_steps, n_outputs])
 
-layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.relu) for layer in range(n_layers)]
+layers = [tf.contrib.rnn.BasicRNNCell(num_units=n_neurons, activation=tf.nn.relu)
+          for layer in range(n_layers)]
 multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
 outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, X, dtype=tf.float32)
-
 loss = tf.reduce_mean(tf.square(outputs - y))
+
 optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 training_op = optimizer.minimize(loss)
 
@@ -81,7 +82,7 @@ with tf.Session() as sess:
     X_new = bX
     y_pred = sess.run(outputs, feed_dict={X: X_new})
 
-plt.title("LA Fire Department Incidents", fontsize=14)
+plt.title("SF Fire Department Incidents", fontsize=14)
 plt.plot(t_instance[1:], by[0,:,0], "g-", markersize=2, label="Target")
 plt.plot(t_instance[1:], y_pred[0,:,0], "r-", markersize=1, label="Prediction")
 plt.legend(loc="upper left")

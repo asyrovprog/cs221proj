@@ -18,11 +18,11 @@ datasets = [
     ["https://data.lacity.org/api/views/y8tr-7khq/rows.csv?accessType=DOWNLOAD",
      False,
      "./data_raw/los-angeles-911.csv"],
-    # The Los Angeles Fire Department (LAFD)’s Computer Aided Dispatch (CAD)
-    # https://catalog.data.gov/dataset/lafd-responsemetrics-rawdata
-    ["https://data.lacity.org/api/views/cthf-nngn/rows.csv?accessType=DOWNLOAD",
+    # The City of San Francisco Fire Department Calls for Service
+    # https://catalog.data.gov/dataset/fire-department-calls-for-service
+    ["https://data.sfgov.org/api/views/nuek-vuh3/rows.csv?accessType=DOWNLOAD",
      False,
-    "./data_raw/los-angeles-fire.csv"]]
+    "./data_raw/san-francisco-fire.csv"]]
 
 
 def download_unzip(download_info):
