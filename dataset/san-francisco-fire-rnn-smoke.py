@@ -15,7 +15,7 @@ n_iterations = 1500
 batch_size = 50
 n_layers = 3
 
-ARTIFACTS = "../calcs/la-fire-rnn-smoke"
+ARTIFACTS = "../calcs/san-francisco-fire-rnn-smoke"
 DATASET = "../ds/san-francisco-fire-counts-2001-2017-hours.csv"
 
 with open(DATASET, "rt") as f:
