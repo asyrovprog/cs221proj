@@ -4,29 +4,32 @@ import matplotlib.pyplot as plt
 
 from sklearn import metrics
 from sklearn.cluster import KMeans
-from sklearn.datasets import load_digits
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
-from numpy import genfromtxt
 from pandas import read_csv
 from PIL import Image
 
+from dataset_descriptor import SeattlePoliceDataset
+from dataset_descriptor import SanFranciscoFireDataset
+
 np.random.seed(42)
+#dataset = SeattlePoliceDataset()
+dataset = SanFranciscoFireDataset()
 
-raw_data = read_csv('1week_may2017.csv').as_matrix()
-locations_data = raw_data[:,12:14]
-
-reduced_data = locations_data
-kmeans = KMeans(init='k-means++', n_clusters=10, n_init=10)
+reduced_data = dataset.getLocationsData()
+kmeans = KMeans(init='k-means++',
+                n_clusters=dataset.getClustersCount(),
+                n_init=10)
 kmeans.fit(reduced_data)
 
 # Step size of the mesh.
 h = .0001     # point in the mesh [x_min, x_max]x[y_min, y_max].
 
 # Plot the decision boundary. For that, we will assign a color to each
-x_min, x_max = -122.4530924, -122.2042264 
-y_min, y_max = 47.4682218, 47.76240258 
+x_min, x_max = dataset.getXBoundaries(reduced_data)
+y_min, y_max = dataset.getYBoundaries(reduced_data)
 xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+#print(x_min, x_max, y_min, y_max) 
 
 # Obtain labels for each point in mesh.
 Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
@@ -43,7 +46,7 @@ plt.imshow(Z, interpolation='nearest',
 plt.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
 
 # Plot Seattle image
-map_img = Image.open("Seattle_map.png")
+map_img = dataset.getBackgroundImage()
 plt.imshow(map_img,
            extent=(xx.min(), xx.max(), yy.min(), yy.max()),
            alpha = 0.5)
