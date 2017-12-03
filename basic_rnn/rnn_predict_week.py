@@ -3,40 +3,43 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv, os, random
 
+# do we need to rebuild artifacts (weights)?:
 rebuild_artifacts = True
+# do we need to build logs for tensorboard?:
 build_tensorboard_logs = False
 
-# number of previous values, since we look at 1 week here to predict next week our window is 24 by 7
-previous_state_vector_size = 24 * 7
-
-# we have just one input, which is number of emergency phone calls during current hour
+# number of previous values, since we look at 1 week here to predict next week
+# our window is 24 by 7. we will pass all previous days as state.
+state_vector_size = 24 * 7
+# we have just one input, which is number of emergency phone calls during current hour:
 input_vector_size = 1
-
-# number of steps and size of prediction vector
-neuron_count = previous_state_vector_size + input_vector_size
-
-# our prediction is again number of phone calls for hour
+# number of steps and size of prediction vector:
+neuron_count = state_vector_size + input_vector_size
+# our prediction is again number of phone calls for hour:
 output_vector_size = 1
-
-# learning rate found during optimization in dev phase
+# learning rate found during optimization in dev phase:
 learning_rate = 0.0005
-
-# iteration count found during optimization in dev phase
+# iteration count found during optimization in dev phase:
 n_iterations = 800
-
-# iteration count found during optimization in dev phase
+# iteration count found during optimization in dev phase:
 batch_size = 50
-
-# number of layers found during optimization in dev phase
+# number of layers found during optimization in dev phase:
 layer_count = 2
 
+# prefix for file names for artifacts (weights, etc), if we have them we can skip training phase
+# and just load them and to prediction
 ARTIFACTS = "../calcs/sf-fire-rnn-smoke"
+
+# name of training dataset
 DATASET = "../ds/sf-fire-counts-train.csv"
+
+# name of test dataset (it should be *dev.* except for final phase)
 TARGET_DATASET = "../ds/sf-fire-counts-dev.csv"
 
 data = []
-t_instance = np.linspace(0, previous_state_vector_size + 1, previous_state_vector_size + 1)
+t_instance = np.linspace(0, state_vector_size + 1, state_vector_size + 1)
 
+# load data as array of counts of incidents per hour
 def load_dataset(filename):
     global data
     with open(filename, "rt") as f:
@@ -46,30 +49,33 @@ def load_dataset(filename):
             data.append(float(line["count"]))
         data = np.array(data)
 
+# initialize tensorflow default graph
 def reset_graph(seed=42):
     tf.reset_default_graph()
     tf.set_random_seed(seed)
     np.random.seed(seed)
 
-def next_batch(n_batch, n_steps):
+# this returns 'step_count' batches, each of 'batch_size'
+def next_batch(batch_size, step_count):
     count = len(data)
-    ys = []
+    ts = []
     for b in range(0, batch_size):
-        i = random.randint(0, count - n_steps * 2 - 1)
+        i = random.randint(0, count - step_count * 2 - 1)
         run = []
-        for s in range(0, n_steps * 2 + 1):
+        for s in range(0, step_count * 2 + 1):
             run.append(data[i])
             i += 1
-        ys.append(run)
-    ys = np.array(ys)
-    return ys[:, :-1].reshape(-1, n_steps, 1), ys[:, 1:].reshape(-1, n_steps, 1)
+        ts.append(run)
+    ts = np.array(ts)
+    return ts[:, :-1].reshape(-1, step_count, 1), ts[:, 1:].reshape(-1, step_count, 1)
 
-
+# main function which trains and predicts
 def train_predict():
+    # load training dataset
     load_dataset(DATASET)
 
-    X = tf.placeholder(tf.float32, [None, previous_state_vector_size, input_vector_size])
-    y = tf.placeholder(tf.float32, [None, previous_state_vector_size, output_vector_size])
+    X = tf.placeholder(tf.float32, [None, state_vector_size, input_vector_size])
+    y = tf.placeholder(tf.float32, [None, state_vector_size, output_vector_size])
 
     # this is standard creation of RNN cell, approximately equivalent to:
     # def rnn_cell(rnn_input, state):
@@ -91,8 +97,11 @@ def train_predict():
     # processing.
     outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, X, dtype=tf.float32)
 
+    # standard square loss
     loss = tf.reduce_mean(tf.square(outputs - y))
 
+    # adam optimization algorithm is an extension to stochastic gradient descent
+    # https://arxiv.org/abs/1412.6980
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_op = optimizer.minimize(loss)
 
@@ -105,7 +114,7 @@ def train_predict():
                 writer = tf.summary.FileWriter('logs', sess.graph)
             init.run()
             for iteration in range(n_iterations):
-                X_batch, y_batch = next_batch(batch_size, previous_state_vector_size)
+                X_batch, y_batch = next_batch(batch_size, state_vector_size)
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
                 if iteration % 100 == 0:
                     mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
@@ -117,7 +126,7 @@ def train_predict():
 
     # now, let's verify if we can do good prediction on dev make_ds
     load_dataset(TARGET_DATASET)
-    bX, by = next_batch(1, previous_state_vector_size)
+    bX, by = next_batch(1, state_vector_size)
 
     with tf.Session() as sess:
         saver.restore(sess, ARTIFACTS)
