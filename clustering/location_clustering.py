@@ -13,8 +13,8 @@ from dataset_descriptor import SeattlePoliceDataset
 from dataset_descriptor import SanFranciscoFireDataset
 
 np.random.seed(42)
-#dataset = SeattlePoliceDataset()
-dataset = SanFranciscoFireDataset()
+dataset = SeattlePoliceDataset()
+#dataset = SanFranciscoFireDataset()
 
 reduced_data = dataset.getLocationsData()
 kmeans = KMeans(init='k-means++',
@@ -54,8 +54,8 @@ plt.imshow(map_img,
 # Plot the centroids as a white X
 centroids = kmeans.cluster_centers_
 plt.scatter(centroids[:, 0], centroids[:, 1],
-            marker='x', s=169, linewidths=3,
-            color='w', zorder=10)
+            marker='x', s=169, linewidths=1,
+            color='r', zorder=10)
 plt.xlim(x_min, x_max)
 plt.ylim(y_min, y_max)
 plt.xticks(())
