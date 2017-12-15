@@ -8,9 +8,15 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import scale
 from pandas import read_csv
 from PIL import Image
+import argparse
 
 from dataset_descriptor import SeattlePoliceDataset
 from dataset_descriptor import SanFranciscoFireDataset
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-n', action='store', default=10, type=int)
+args = parser.parse_args()
+n_clusters = args.n
 
 np.random.seed(42)
 dataset = SeattlePoliceDataset()
@@ -18,8 +24,8 @@ dataset = SeattlePoliceDataset()
 
 reduced_data = dataset.getLocationsData()
 kmeans = KMeans(init='k-means++',
-                n_clusters=dataset.getClustersCount(),
-                n_init=10)
+                n_clusters=n_clusters,
+                n_init=n_clusters)
 kmeans.fit(reduced_data)
 
 # Step size of the mesh.
@@ -45,13 +51,13 @@ plt.imshow(Z, interpolation='nearest',
 
 plt.plot(reduced_data[:, 0], reduced_data[:, 1], 'k.', markersize=2)
 
-# Plot Seattle image
+# Plot San Francisco image
 map_img = dataset.getBackgroundImage()
 plt.imshow(map_img,
            extent=(xx.min(), xx.max(), yy.min(), yy.max()),
            alpha = 0.5)
 
-# Plot the centroids as a white X
+# Plot the centroids as red X
 centroids = kmeans.cluster_centers_
 plt.scatter(centroids[:, 0], centroids[:, 1],
             marker='x', s=169, linewidths=1,

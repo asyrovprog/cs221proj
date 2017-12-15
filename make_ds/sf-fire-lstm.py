@@ -2,7 +2,9 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import csv, os, random, math
-n_steps = 24
+import argparse
+
+n_steps = 24 * 7
 n_inputs = 1
 n_neurons = 48
 n_outputs = 1
@@ -11,7 +13,7 @@ n_iterations = 1500
 batch_size = 50
 n_layers = 3
 normalization_factor = 200
-n_test_iters = 100
+n_test_iters = 40
 
 ARTIFACTS = "../calcs/{}/sf-fire"
 DATASET = "../ds/sf-fire-counts-train.csv"
@@ -61,10 +63,10 @@ def get_rnn(X):
     return outputs
 
 def get_lstm(X):
-    layers = [tf.contrib.rnn.LSTMCell(num_units=800, forget_bias=0.2)
+    layers = [tf.contrib.rnn.LSTMCell(num_units=n_neurons, forget_bias=0.2)
               for layer in range(n_layers)]
     result_cell = tf.contrib.rnn.MultiRNNCell(layers)
-    #result_cell = tf.contrib.rnn.LSTMCell(num_units=800, forget_bias=0.2)
+    #result_cell = tf.contrib.rnn.LSTMCell(num_units=n_neurons, forget_bias=0.2)
 
     outputs, states = tf.nn.dynamic_rnn(result_cell, X, dtype=tf.float32)
     return outputs
@@ -81,7 +83,8 @@ def train_and_save(name, model_func, X, y):
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
-    if not os.path.isfile(ARTIFACTS.format(name) + ".index"):
+    #if not os.path.isfile(ARTIFACTS.format(name) + ".index"):
+    if True:
         with tf.Session() as sess:
             init.run()
             for iteration in range(n_iterations):
@@ -112,14 +115,25 @@ def get_test_rmse(name, output, X):
     return sum(samples)/len(samples)
 
 def train_predict():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', action='store', default=100, type=int)
+    parser.add_argument('-l', action='store', default=3, type=int)
+    parser.add_argument('-m', action='store', default='rnn')
+    args = parser.parse_args()
+    n_neurons = args.n
+    n_layers = args.l
+    model = args.m
+    
     load_dataset(DATASET)
 
     X = tf.placeholder(tf.float32, [None, n_steps, n_inputs])
     y = tf.placeholder(tf.float32, [None, n_steps, n_outputs])
 
     models = {}
-    #models['lstm'] = train_and_save('lstm', get_lstm, X, y)
-    models['rnn'] = train_and_save('rnn', get_rnn, X, y)
+    if (model == 'rnn'):
+        models['rnn'] = train_and_save('rnn', get_rnn, X, y)
+    else:
+        models['lstm'] = train_and_save('lstm', get_lstm, X, y)    
     
     load_dataset(TARGET_DATASET)
 
@@ -135,7 +149,7 @@ def train_predict():
     plt.title("SF Fire Department Incidents", fontsize=14)
     plt.plot(t_instance[1:], target, "g-", markersize=2, label="Target")
     for name in predictions:
-        plt.plot(t_instance[1:], predictions[name], "b-" if name=='lstm' else "r-", markersize=1, label="Prediction " + name)
+        plt.plot(t_instance[1:], predictions[name], "r-", markersize=1, label="Prediction " + name)
     plt.legend(loc="upper left")
     plt.xlabel("Hours")
 
