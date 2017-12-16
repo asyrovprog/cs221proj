@@ -19,7 +19,7 @@ class SeattlePoliceDataset(object):
         return (47.4682218, 47.76240258)
 
     def getBackgroundImage(self):
-        return Image.open("Seattle_map.png")
+        return Image.open("seattle_map.png")
 
 class SanFranciscoFireDataset(object):
     def getLocationsData(self):
