@@ -5,12 +5,12 @@ import csv, os, random
 
 rebuild_artifacts = False               # do training even if weight already saved
 build_tensorboard_logs = False          # build logs for tensorboard
-num_prediction_samples = 20             # number of "creative" prediction weeks for RMSE calculation
-verbous = True                          # some logging
+num_prediction_samples = 1              # number of "creative" prediction weeks for RMSE calculation
+verbous = False                         # some logging
 training_loss_step = 50                 # loss report step
-display_training_loss_chart = True      # create learning curve chart
+display_training_loss_chart = False     # create learning curve chart
 use_GRU_cell = False                    # use GRU Cell instead of Vanilla RNN
-run_on_test_dataset = False             # this should be false during development
+run_on_test_dataset = True              # this should be false during development
 
 num_steps = 24 * 31       # number of time-steps
 neuron_count = 98         # number of units in hidden state (same for all Vanilla RNN cells)
@@ -105,7 +105,7 @@ def train_predict():
 
         if display_training_loss_chart:
             x = [i * training_loss_step for i in range(0, len(losses))]
-            plt.title("Training curve", fontsize=14)
+            plt.title("Learning curve", fontsize=14)
             plt.plot(x, losses, "g-", markersize=3)
             plt.xlabel("iteration", fontsize=14)
             plt.ylabel("Mean Square Loss", fontsize=14)
