@@ -10,7 +10,7 @@ class SeattlePoliceDataset(object):
         return locations_data
 
     def getClustersCount(self):
-        return 10
+        return 51
 
     def getXBoundaries(self, data):
         return (-122.4530924, -122.2042264)
@@ -31,7 +31,7 @@ class SanFranciscoFireDataset(object):
         return np.array(l)
 
     def getClustersCount(self):
-        return 10
+        return 51
 
     def getXBoundaries(self, data):
         return (-122.5431111, -122.3368721)

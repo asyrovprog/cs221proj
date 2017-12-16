@@ -102,7 +102,7 @@ if __name__ == "__main__":
     train, dev = initialize_datasets(False)
     start = len(dev) // 2 + 1380
     print(start)
-    pdev = dev[start: start + 24 * 8 * 2]
+    pdev = dev[start: start + 24 * 7]
     plt.plot(pdev)
     plt.show()
 

@@ -3,36 +3,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv, os, random
 
-rebuild_artifacts = True
-build_tensorboard_logs = False
-num_prediction_samples = 1 # 20
-verbous = True
-training_loss_step = 50
-display_training_loss_chart = True
+rebuild_artifacts = False               # do training even if weight already saved
+build_tensorboard_logs = False          # build logs for tensorboard
+num_prediction_samples = 20             # number of "creative" prediction weeks for RMSE calculation
+verbous = True                          # some logging
+training_loss_step = 50                 # loss report step
+display_training_loss_chart = True      # create learning curve chart
+use_GRU_cell = False                    # use GRU Cell instead of Vanilla RNN
+run_on_test_dataset = False             # this should be false during development
 
-# number of previous values
-num_steps = 24 * 31
-# we have just one input, which is number of emergency phone calls during current hour
-input_size = 1
-# number of units in hidden state (same for all Vanilla RNN cells)
-neuron_count = 98
-# our prediction is again number of phone calls for hour
-output_size = 1
-# learning rate found during optimization in dev phase
-learning_rate = 0.00019
-# iteration count found during optimization in dev phase
-num_iters = 800
-# iteration count found during optimization in dev phase
+num_steps = 24 * 31       # number of time-steps
+neuron_count = 98         # number of units in hidden state (same for all Vanilla RNN cells)
+learning_rate = 0.00019   # learning rate found during optimization
+num_iters = 800           # iteration count found during optimization
 batch_size = 50
-# number of layers found during optimization in dev phase
-layer_count = 3
+layer_count = 3           # number of rnn cells layers
 
-
-ARTIFACTS = "../calcs/sf-fire-rnn-smoke"
-DATASET = "../ds/sf-fire-counts-train.csv"
-TARGET_DATASET = "../ds/sf-fire-counts-test.csv"
+ARTIFACTS = "../calcs/sf-fire-rnn-smoke"       # artifacts (weights) file(s) prefix
+DATASET   = "../ds/sf-fire-counts-train.csv"   # training dataset
+if run_on_test_dataset:
+    TARGET_DATASET = "../ds/sf-fire-counts-test.csv"
+else:
+    TARGET_DATASET = "../ds/sf-fire-counts-dev.csv"
 data = []
 
+# load dataset
 def load_dataset(filename):
     global data
     with open(filename, "rt") as f:
@@ -42,6 +37,7 @@ def load_dataset(filename):
             data.append(float(line["count"]))
         data = np.array(data)
 
+# initialize tensorflow graph
 def reset_graph(seed=42):
     tf.reset_default_graph()
     tf.set_random_seed(seed)
@@ -63,20 +59,18 @@ def next_batch(n_batch, n_steps):
 
 # calculate root of mean of difference squared, arrays must be np.array()
 def RMSE(predictions, targets):
-    diff = predictions - targets
-    diff_squared = diff ** 2
-    mean_of_diff = diff_squared.mean()
-    rmse_val = np.sqrt(mean_of_diff)
-    return rmse_val
+    diff_squared = (predictions - targets) ** 2
+    return np.sqrt(diff_squared.mean())
 
 def train_predict():
     load_dataset(DATASET)
+    X = tf.placeholder(tf.float32, [None, num_steps, 1])
+    y = tf.placeholder(tf.float32, [None, num_steps, 1])
 
-    X = tf.placeholder(tf.float32, [None, num_steps, input_size])
-    y = tf.placeholder(tf.float32, [None, num_steps, output_size])
-
-    layers = [tf.contrib.rnn.BasicRNNCell(num_units=neuron_count, activation=tf.nn.relu) for layer in range(layer_count)]
-
+    if use_GRU_cell:
+        layers = [tf.contrib.rnn.GRUCell(num_units=neuron_count, activation=tf.nn.relu) for layer in range(layer_count)]
+    else:
+        layers = [tf.contrib.rnn.BasicRNNCell(num_units=neuron_count, activation=tf.nn.relu) for layer in range(layer_count)]
     # Now we need to stack our layers on top of each other
     multi_layer_cell = tf.contrib.rnn.MultiRNNCell(layers)
     outputs, states = tf.nn.dynamic_rnn(multi_layer_cell, X, dtype=tf.float32)
@@ -88,7 +82,6 @@ def train_predict():
     loss = tf.reduce_mean(tf.square(outputs - y))
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     training_op = optimizer.minimize(loss)
-
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
 
@@ -99,10 +92,10 @@ def train_predict():
                 writer = tf.summary.FileWriter('logs', sess.graph)
             init.run()
             for iteration in range(num_iters):
-                X_batch, y_batch, ids = next_batch(batch_size, num_steps)
-                sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
+                x_batch, y_batch, ids = next_batch(batch_size, num_steps)
+                sess.run(training_op, feed_dict={X: x_batch, y: y_batch})
                 if iteration % training_loss_step == 0 or iteration == num_iters - 1:
-                    mse = loss.eval(feed_dict={X: X_batch, y: y_batch})
+                    mse = loss.eval(feed_dict={X: x_batch, y: y_batch})
                     losses.append(mse)
                     print(iteration, "\tLoss:", mse)
 
@@ -125,12 +118,12 @@ def train_predict():
         saver.restore(sess, ARTIFACTS)
         all_targets, all_predictions = [], []
         for i in range(0, num_prediction_samples):
-            bX, by, ids = next_batch(1, num_steps)
+            bx, by, ids = next_batch(1, num_steps)
             targets, predictions = [], []
-            sequence = [i for i in bX[0, :, 0]]
+            sequence = [i for i in bx[0, :, 0]]
             for iteration in range(24 * 7):
-                X_batch = np.array(sequence[-num_steps:]).reshape(1, num_steps, 1)
-                y_pred = sess.run(outputs, feed_dict={X: X_batch})
+                x_batch = np.array(sequence[-num_steps:]).reshape(1, num_steps, 1)
+                y_pred = sess.run(outputs, feed_dict={X: x_batch})
                 sequence.append(y_pred[0, -1, 0])
                 predictions.append(y_pred[0, -1, 0])
                 targets.append(data[ids[0] + len(sequence)])
