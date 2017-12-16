@@ -24,6 +24,15 @@ Optional arguments:
  -l - number of layers (deafult=3)
  
  -m - type of network, rnn or lstm (default rnn)
+ 
+ ## Clustering
+ 
+ Run clustering by running 'clustering/location_clustering.py'. 
+ 
+ Optional parameter '-n' - number of clusters (default = 10)
+
+Example: 
+python location_clustering.py -n 15
 
   
 
