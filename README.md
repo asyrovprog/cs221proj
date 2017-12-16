@@ -37,7 +37,7 @@ python location_clustering.py -n 15
 ## Classification
 
 For classification, just go to 
-classification folder and run `classifier/classification.py`  
+classification folder and run `python classification.py`  
 The ML model will be developed based on small portion of data
 
   
