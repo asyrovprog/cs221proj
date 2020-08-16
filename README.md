@@ -1,4 +1,4 @@
-# CS221: Emergency Call Analysis on San Francisco Fire Department datase
+# CS221: Emergency Call Analysis on San Francisco Fire Department dataset
 
 ## Downloading raw data and generate datasets
 
